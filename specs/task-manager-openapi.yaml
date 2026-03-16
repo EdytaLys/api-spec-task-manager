@@ -4,7 +4,7 @@ info:
   description: A full-stack task management application built with Spring Boot and
     React, featuring a Kanban board with drag-and-drop functionality, real-time validation,
     and comprehensive CRUD operations.
-  version: 2.0.0
+  version: 2.1.0
   x-source-repo: /Users/edyta.lysiak/Desktop/Projects/Playground/GitHub/task_manager_with_copilot
   x-scanned-at: '2026-03-15T18:08:55Z'
 servers:
@@ -168,6 +168,144 @@ paths:
         schema:
           type: integer
           format: int64
+  /api/tasks/{taskId}/comments:
+    post:
+      summary: Create Comments API to enable task collaboration
+      description: 'As a team member, I want to add comments to tasks so that I can
+        communicate progress and blockers without leaving the task manager.
+
+
+        **Acceptance criteria:**
+
+        Comment entity has id, taskId (FK), body (max 1000 chars), author, createdAt,
+        updatedAt
+
+        Comments are returned ordered by createdAt ascending
+
+        POST returns 201 Created with the created comment body
+
+        Deleting the parent task cascades to delete its comments
+
+        Auto-generated OpenAPI spec documents request/response schemas correctly'
+      operationId: postApiTasksComments
+      tags:
+      - Comment
+      responses:
+        '201':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+    get:
+      summary: Create Comments API to enable task collaboration
+      description: 'As a team member, I want to add comments to tasks so that I can
+        communicate progress and blockers without leaving the task manager.
+
+
+        **Acceptance criteria:**
+
+        Comment entity has id, taskId (FK), body (max 1000 chars), author, createdAt,
+        updatedAt
+
+        Comments are returned ordered by createdAt ascending
+
+        POST returns 201 Created with the created comment body
+
+        Deleting the parent task cascades to delete its comments
+
+        Auto-generated OpenAPI spec documents request/response schemas correctly'
+      operationId: getApiTasksComments
+      tags:
+      - Comment
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+  /api/tasks/{taskId}/comments/{commentId}:
+    put:
+      summary: Create Comments API to enable task collaboration
+      description: 'As a team member, I want to add comments to tasks so that I can
+        communicate progress and blockers without leaving the task manager.
+
+
+        **Acceptance criteria:**
+
+        Comment entity has id, taskId (FK), body (max 1000 chars), author, createdAt,
+        updatedAt
+
+        Comments are returned ordered by createdAt ascending
+
+        POST returns 201 Created with the created comment body
+
+        Deleting the parent task cascades to delete its comments
+
+        Auto-generated OpenAPI spec documents request/response schemas correctly'
+      operationId: putApiTasksComments
+      tags:
+      - Comment
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+    delete:
+      summary: Create Comments API to enable task collaboration
+      description: 'As a team member, I want to add comments to tasks so that I can
+        communicate progress and blockers without leaving the task manager.
+
+
+        **Acceptance criteria:**
+
+        Comment entity has id, taskId (FK), body (max 1000 chars), author, createdAt,
+        updatedAt
+
+        Comments are returned ordered by createdAt ascending
+
+        POST returns 201 Created with the created comment body
+
+        Deleting the parent task cascades to delete its comments
+
+        Auto-generated OpenAPI spec documents request/response schemas correctly'
+      operationId: deleteApiTasksComments
+      tags:
+      - Comment
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
 components:
   schemas:
     TaskCreateDTO:
@@ -242,6 +380,13 @@ components:
         size:
           type: integer
     TaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique resource identifier
+    CommentResponse:
       type: object
       properties:
         id:
