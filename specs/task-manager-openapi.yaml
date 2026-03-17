@@ -1,101 +1,185 @@
 openapi: 3.0.3
 info:
   title: Task Manager With Copilot API
-  description: A full-stack task management application built with Spring Boot and
-    React, featuring a Kanban board with drag-and-drop functionality, real-time validation,
+  description: >
+    A full-stack task management application built with Spring Boot and React,
+    featuring a Kanban board with drag-and-drop functionality, real-time validation,
     and comprehensive CRUD operations.
-  version: 2.0.0
+  version: 2.1.0
+  x-jira-issue: SCRUM-4
+  x-change-type: additive
   x-source-repo: /Users/edyta.lysiak/Desktop/Projects/Playground/GitHub/task_manager_with_copilot
   x-scanned-at: '2026-03-15T18:08:55Z'
+
 servers:
-- url: https://task-manager-with-copilot-server-535572860478.europe-west1.run.app
-  description: Production
-- url: http://localhost:8080
-  description: Local development
+  - url: https://task-manager-with-copilot-server-535572860478.europe-west1.run.app
+    description: Production
+  - url: http://localhost:8080
+    description: Local development
+
 paths:
   /api/tasks:
     get:
-      summary: Update GET /api/tasks
-      description: 'As a developer, I want to update GET /api/tasks to improve functionality
-        and meet new requirements.
+      summary: List tasks with pagination, sorting and filtering
+      description: >
+        Returns a paginated list of tasks. Supports sorting and optional filters.
+
+
+        **Backwards compatibility:**
+
+        - `Accept-Version: v1` returns a flat array (legacy behaviour)
+
+        - `Accept-Version: v2` (default) returns a `Page<Task>` envelope
 
 
         **Validation rules:**
 
-        - Requesting size > 100 returns 400 Bad Request
+        - Requesting `size > 100` returns 400 Bad Request
 
 
         **Acceptance criteria:**
 
-        GET /api/tasks?page=0&size=5 returns at most 5 tasks
+        - `GET /api/tasks?page=0&size=5` returns at most 5 tasks
 
-        GET /api/tasks?sort=dueDate,asc returns tasks sorted by due date ascending
+        - `GET /api/tasks?sort=dueDate,asc` returns tasks sorted by due date ascending
 
-        GET /api/tasks?status=TODO returns only TODO tasks'
+        - `GET /api/tasks?status=TODO` returns only TODO tasks
+
+        - Requesting `size > 100` returns 400 Bad Request
       operationId: getApiTasks
       tags:
-      - Task
+        - Tasks
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Zero-based page index (default 0)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          required: false
+          description: Number of tasks per page (default 20, max 100)
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: sort
+          in: query
+          required: false
+          description: "Sort field and direction, e.g. createdAt,desc or dueDate,asc"
+          schema:
+            type: string
+          example: createdAt,desc
+        - name: status
+          in: query
+          required: false
+          description: Filter by task status
+          schema:
+            type: string
+            enum: [TODO, IN_PROGRESS, DONE]
+        - name: dueBefore
+          in: query
+          required: false
+          description: Return tasks with dueDate before this date (inclusive), ISO-8601 date
+          schema:
+            type: string
+            format: date
+          example: "2026-12-31"
+        - name: dueAfter
+          in: query
+          required: false
+          description: Return tasks with dueDate after this date (inclusive), ISO-8601 date
+          schema:
+            type: string
+            format: date
+          example: "2026-01-01"
+        - name: Accept-Version
+          in: header
+          required: false
+          description: >
+            API version selector for backwards compatibility.
+            `v1` returns a flat array; `v2` (default) returns a Page envelope.
+          schema:
+            type: string
+            enum: [v1, v2]
+            default: v2
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PageTask'
+                oneOf:
+                  - $ref: '#/components/schemas/PageTask'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/TaskResponse'
+              examples:
+                v2-paged:
+                  summary: v2 paged response
+                  value:
+                    content:
+                      - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        title: "Fix login bug"
+                        status: "TODO"
+                        dueDate: "2026-06-01"
+                    totalElements: 42
+                    totalPages: 9
+                    number: 0
+                    size: 5
+                v1-array:
+                  summary: v1 flat array response
+                  value:
+                    - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      title: "Fix login bug"
+                      status: "TODO"
+                      dueDate: "2026-06-01"
         '400':
-          description: Bad request — validation error
+          description: Bad request — validation error (e.g. size > 100)
         '401':
           description: Unauthorized
         '500':
           description: Internal server error
-      parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          maximum: 100
-      - name: sort
-        in: query
-        required: false
-        schema:
-          type: string
-        example: createdAt,desc
+
     post:
       operationId: createTask
       tags:
-      - Tasks
+        - Tasks
       summary: POST /api/tasks
-      responses:
-        '201':
-          description: Created
-        '400':
-          description: Bad request — validation error
-        '409':
-          description: Conflict — resource already exists
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal server error
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskCreateDTO'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict — resource already exists
+        '500':
+          description: Internal server error
+
   /api/tasks/{id}:
     get:
       operationId: getTaskById
       tags:
-      - Tasks
+        - Tasks
       summary: GET /api/tasks/{id}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
           description: Successful response
@@ -107,49 +191,51 @@ paths:
           description: Resource not found
         '500':
           description: Internal server error
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+
     put:
       operationId: updateTask
       tags:
-      - Tasks
+        - Tasks
       summary: PUT /api/tasks/{id}
-      responses:
-        '200':
-          description: Successful response
-        '400':
-          description: Bad request — validation error
-        '409':
-          description: Conflict — resource already exists
-        '401':
-          description: Unauthorized
-        '404':
-          description: Resource not found
-        '500':
-          description: Internal server error
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskUpdateDTO'
+      responses:
+        '200':
+          description: Successful response
+        '400':
+          description: Bad request — validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Resource not found
+        '409':
+          description: Conflict — resource already exists
+        '500':
+          description: Internal server error
+
     delete:
       operationId: deleteTask
       tags:
-      - Tasks
+        - Tasks
       summary: DELETE /api/tasks/{id}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
           description: Successful response
@@ -161,17 +247,14 @@ paths:
           description: Resource not found
         '500':
           description: Internal server error
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+
 components:
   schemas:
     TaskCreateDTO:
       type: object
+      required:
+        - title
+        - status
       properties:
         title:
           type: string
@@ -182,11 +265,12 @@ components:
         dueDate:
           type: string
           format: date-time
-      required:
-      - title
-      - status
+
     TaskUpdateDTO:
       type: object
+      required:
+        - title
+        - status
       properties:
         title:
           type: string
@@ -197,35 +281,25 @@ components:
         dueDate:
           type: string
           format: date-time
-      required:
-      - title
-      - status
-    SuccessResponse:
+
+    TaskResponse:
       type: object
       properties:
-        data:
-          description: Response payload
-        timestamp:
+        id:
           type: string
-          format: date-time
-    ErrorResponse:
-      type: object
-      properties:
-        message:
+          format: uuid
+          description: Unique resource identifier
+        title:
           type: string
-        timestamp:
+        description:
           type: string
-          format: date-time
-    ValidationErrorResponse:
-      type: object
-      properties:
-        errors:
-          type: object
-          additionalProperties:
-            type: string
-        timestamp:
+        status:
           type: string
-          format: date-time
+          enum: [TODO, IN_PROGRESS, DONE]
+        dueDate:
+          type: string
+          format: date
+
     PageTask:
       type: object
       properties:
@@ -241,20 +315,45 @@ components:
           type: integer
         size:
           type: integer
-    TaskResponse:
+
+    SuccessResponse:
       type: object
       properties:
-        id:
+        data:
+          description: Response payload
+        timestamp:
           type: string
-          format: uuid
-          description: Unique resource identifier
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
 security:
-- BearerAuth: []
+  - BearerAuth: []
+
 tags:
-- name: Tasks
-  description: Operations on Tasks resources
+  - name: Tasks
+    description: Operations on Tasks resources
